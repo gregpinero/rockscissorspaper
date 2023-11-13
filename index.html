@@ -18,10 +18,10 @@
 	</style>
 
     <script>
- 	  const SPRITE_SIZE = 30; // Set the standard sprite size
- 	  const HOMING_RATE = .01 // How fast to retreat and attack
-	  
-	  let removalMode = true; // Set to true to enable the removal mode
+      const SPRITE_SIZE = 30; // Set the standard sprite size
+      const HOMING_RATE = .01 // How fast to retreat and attack
+      let removalMode = true; // Set to true to enable the removal mode
+      let numSpritesTriggerHereMode = 4;
       let sprites = [];
       let numSprites = 120;
 
@@ -193,7 +193,7 @@
 
 		heroMode() {
 			//return true;
-			return sprites.filter(s => s.type === this.type).length <= 4;
+			return sprites.filter(s => s.type === this.type).length <= numSpritesTriggerHereMode;
 		}        
 	
         display() {
