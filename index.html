@@ -18,199 +18,197 @@
 	</style>
 
     <script>
-      const SPRITE_SIZE = 30; // Set the standard sprite size
-      const HOMING_RATE = .01 // How fast to retreat and attack
-      let removalMode = true; // Set to true to enable the removal mode
-      let numSpritesTriggerHereMode = 4;
-      let sprites = [];
-      let numSprites = 120;
+const SPRITE_SIZE = 30; // Set the standard sprite size
+const HOMING_RATE = .01 // How fast to retreat and attack
+let removalMode = true; // Set to true to enable the removal mode
+let numSpritesTriggerHereMode = 4;
+let sprites = [];
+let numSprites = 120;
 
-      let rockImg, paperImg, scissorImg;
+let rockImg, paperImg, scissorImg;
 
-		function keyPressed() {
-		  if (key === 'r' || key === 'R') {
-			removalMode = !removalMode;
-		  }
-		}
+function keyPressed() {
+  if (key === 'r' || key === 'R') {
+    removalMode = !removalMode;
+  }
+}
 
-      function preload() {
-        rockImg = loadImage('rock.png'); // Replace with your rock image URL
-        paperImg = loadImage('paper.png'); // Replace with your paper image URL
-        scissorImg = loadImage('scissors.png'); // Replace with your scissors image URL
-      }
+function preload() {
+  rockImg = loadImage('rock.png'); // Replace with your rock image URL
+  paperImg = loadImage('paper.png'); // Replace with your paper image URL
+  scissorImg = loadImage('scissors.png'); // Replace with your scissors image URL
+}
 
-      function setup() {
-        createCanvas(1000, 700);
+function setup() {
+  createCanvas(1000, 700);
 
-        for(let i = 0; i < numSprites; i++) {
-          let type = i % 3;
-          sprites.push(new Sprite(type));
-        }
-      }
+  for (let i = 0; i < numSprites; i++) {
+    let type = i % 3;
+    sprites.push(new Sprite(type));
+  }
+}
 
-      function draw() {
-        background(150, 255, 150); // Light green background
-        
-        for(let sprite of sprites) {
-          sprite.move();
-          sprite.display();
-        }
-        
-        checkCollision();
-      }
+function draw() {
+  background(150, 255, 150); // Light green background
 
-		function checkCollision() {
-		  for (let i = sprites.length - 1; i >= 0; i--) {
-			for (let j = sprites.length - 1; j >= 0; j--) {
-			  if (i !== j && sprites[i] && sprites[j] && sprites[i].collides(sprites[j])) {
-				if (removalMode) {
-				  // Remove the loser
-				  let winnerType = resolveCollision(sprites[i], sprites[j]);
-				  if (winnerType !== null) {
-					if (sprites[i].type !== winnerType) {
-					  sprites.splice(i, 1);
-					  break; // Exit the inner loop immediately after removing a sprite
-					} else if (sprites[j].type !== winnerType) {
-					  sprites.splice(j, 1);
-					  // No break needed here as j loop will exit naturally
-					}
-				  }
-				} else {
-				  // Original transformation logic (convert loser type to winner type)
-				  let winner = resolveCollision(sprites[i], sprites[j]);
-				  sprites[i].type = winner;
-				  sprites[j].type = winner;
-				}
-			  }
-			}
-		  }
-		}
+  for (let sprite of sprites) {
+    sprite.move();
+    sprite.display();
+  }
 
+  checkCollision();
+}
 
-      function resolveCollision(spriteA, spriteB) {
-        // Rock = 0, Paper = 1, Scissors = 2
-        if (spriteA.type === spriteB.type) {
-          if (removalMode) {
-          	return null;
+function checkCollision() {
+  for (let i = sprites.length - 1; i >= 0; i--) {
+    for (let j = sprites.length - 1; j >= 0; j--) {
+      if (i !== j && sprites[i] && sprites[j] && sprites[i].collides(sprites[j])) {
+        if (removalMode) {
+          // Remove the loser
+          let winnerType = resolveCollision(sprites[i], sprites[j]);
+          if (winnerType !== null) {
+            if (sprites[i].type !== winnerType) {
+              sprites.splice(i, 1);
+              break; // Exit the inner loop immediately after removing a sprite
+            } else if (sprites[j].type !== winnerType) {
+              sprites.splice(j, 1);
+              // No break needed here as j loop will exit naturally
+            }
           }
-          else {
-		    return spriteA.type;
-		  }
-        }
-        
-        if (spriteA.type === 0 && spriteB.type === 1 || spriteA.type === 1 && spriteB.type === 0) {
-          return 1; // Paper wins
-        }
-        
-        if (spriteA.type === 0 && spriteB.type === 2 || spriteA.type === 2 && spriteB.type === 0) {
-          return 0; // Rock wins
-        }
-        
-        if (spriteA.type === 1 && spriteB.type === 2 || spriteA.type === 2 && spriteB.type === 1) {
-          return 2; // Scissors wins
+        } else {
+          // Original transformation logic (convert loser type to winner type)
+          let winner = resolveCollision(sprites[i], sprites[j]);
+          sprites[i].type = winner;
+          sprites[j].type = winner;
         }
       }
+    }
+  }
+}
 
-      class Sprite {
-        constructor(type) {
-          this.x = random(width);
-          this.y = random(height);
-          this.type = type; // Rock = 0, Paper = 1, Scissors = 2
-          this.x_speed = random(-1, 1);
-          this.y_speed = random(-1, 1);
-          this.remove = false;
-        }
-        
-        move() {
-			// If it's the last of its type, move strategically
-			if (this.heroMode()) {
-				this.moveStrategically();
-			}
-			else {
-			  this.x += this.x_speed;
-			  this.y += this.y_speed;
 
-			  // Keep going the same directions most of the time
-			  if (random()>.985) {          
-				  this.x_speed = random(-1, 1);
-				  this.y_speed = random(-1, 1);          
-			  }
-			}
-			this.x = constrain(this.x, 0, width-SPRITE_SIZE);
-			this.y = constrain(this.y, 0, height-SPRITE_SIZE);
-        }
-        
-		moveStrategically() {
-			let closestPrey = this.findClosestPrey();
-			let closestEnemy = this.findClosestEnemy();
+function resolveCollision(spriteA, spriteB) {
+  // Rock = 0, Paper = 1, Scissors = 2
+  if (spriteA.type === spriteB.type) {
+    if (removalMode) {
+      return null;
+    } else {
+      return spriteA.type;
+    }
+  }
 
-			let preyDistance = closestPrey ? dist(this.x, this.y, closestPrey.x, closestPrey.y) : Infinity;
-			let enemyDistance = closestEnemy ? dist(this.x, this.y, closestEnemy.x, closestEnemy.y) : Infinity;
+  if (spriteA.type === 0 && spriteB.type === 1 || spriteA.type === 1 && spriteB.type === 0) {
+    return 1; // Paper wins
+  }
 
-			// Move towards prey if it is closer than the enemy, otherwise move away from enemy
-			if (preyDistance < enemyDistance) {
-				this.moveToTarget(closestPrey);
-			} else if (closestEnemy) {
-				this.moveAwayFromTarget(closestEnemy);
-			}
-		}
+  if (spriteA.type === 0 && spriteB.type === 2 || spriteA.type === 2 && spriteB.type === 0) {
+    return 0; // Rock wins
+  }
 
-		moveToTarget(target) {
-			this.x -= (target.x - this.x) * HOMING_RATE;
-			this.y -= (target.y - this.y) * HOMING_RATE;
-		}
+  if (spriteA.type === 1 && spriteB.type === 2 || spriteA.type === 2 && spriteB.type === 1) {
+    return 2; // Scissors wins
+  }
+}
 
-		moveAwayFromTarget(target) {
-			this.x += (target.x - this.x) * HOMING_RATE;
-			this.y += (target.y - this.y) * HOMING_RATE;
-		}
+class Sprite {
+  constructor(type) {
+    this.x = random(width);
+    this.y = random(height);
+    this.type = type; // Rock = 0, Paper = 1, Scissors = 2
+    this.x_speed = random(-1, 1);
+    this.y_speed = random(-1, 1);
+    this.remove = false;
+  }
 
-		findClosestPrey() {
-			let preyType = (this.type + 1) % 3;
-			return this.findClosestSpriteOfType(preyType);
-		}
+  move() {
+    // If it's the last of its type, move strategically
+    if (this.heroMode()) {
+      this.moveStrategically();
+    } else {
+      this.x += this.x_speed;
+      this.y += this.y_speed;
 
-		findClosestEnemy() {
-			let enemyType = (this.type + 2) % 3;
-			return this.findClosestSpriteOfType(enemyType);
-		}
+      // Keep going the same directions most of the time
+      if (random() > .985) {
+        this.x_speed = random(-1, 1);
+        this.y_speed = random(-1, 1);
+      }
+    }
+    this.x = constrain(this.x, 0, width - SPRITE_SIZE);
+    this.y = constrain(this.y, 0, height - SPRITE_SIZE);
+  }
 
-		findClosestSpriteOfType(spriteType) {
-			let closestSprite = null;
-			let closestDist = Infinity;
+  moveStrategically() {
+    let closestPrey = this.findClosestPrey();
+    let closestEnemy = this.findClosestEnemy();
 
-			for (let sprite of sprites) {
-			  if (sprite.type === spriteType) {
-				let d = dist(this.x, this.y, sprite.x, sprite.y);
-				if (d < closestDist) {
-				  closestDist = d;
-				  closestSprite = sprite;
-				}
-			  }
-			}
-			return closestSprite;
-		}
+    let preyDistance = closestPrey ? dist(this.x, this.y, closestPrey.x, closestPrey.y) : Infinity;
+    let enemyDistance = closestEnemy ? dist(this.x, this.y, closestEnemy.x, closestEnemy.y) : Infinity;
 
-		heroMode() {
-			//return true;
-			return sprites.filter(s => s.type === this.type).length <= numSpritesTriggerHereMode;
-		}        
-	
-        display() {
-          if (this.type === 0) {
-            image(rockImg, this.x, this.y, SPRITE_SIZE, SPRITE_SIZE);
-          } else if (this.type === 1) {
-            image(paperImg, this.x, this.y, SPRITE_SIZE, SPRITE_SIZE);
-          } else if (this.type === 2) {
-            image(scissorImg, this.x, this.y, SPRITE_SIZE, SPRITE_SIZE);
-          }
-        }
-        
-        collides(other) {
-          let d = dist(this.x, this.y, other.x, other.y);
-          return d < SPRITE_SIZE;
+    // Move towards prey if it is closer than the enemy, otherwise move away from enemy
+    if (preyDistance < enemyDistance) {
+      this.moveToTarget(closestPrey);
+    } else if (closestEnemy) {
+      this.moveAwayFromTarget(closestEnemy);
+    }
+  }
+
+  moveToTarget(target) {
+    this.x -= (target.x - this.x) * HOMING_RATE;
+    this.y -= (target.y - this.y) * HOMING_RATE;
+  }
+
+  moveAwayFromTarget(target) {
+    this.x += (target.x - this.x) * HOMING_RATE;
+    this.y += (target.y - this.y) * HOMING_RATE;
+  }
+
+  findClosestPrey() {
+    let preyType = (this.type + 1) % 3;
+    return this.findClosestSpriteOfType(preyType);
+  }
+
+  findClosestEnemy() {
+    let enemyType = (this.type + 2) % 3;
+    return this.findClosestSpriteOfType(enemyType);
+  }
+
+  findClosestSpriteOfType(spriteType) {
+    let closestSprite = null;
+    let closestDist = Infinity;
+
+    for (let sprite of sprites) {
+      if (sprite.type === spriteType) {
+        let d = dist(this.x, this.y, sprite.x, sprite.y);
+        if (d < closestDist) {
+          closestDist = d;
+          closestSprite = sprite;
         }
       }
+    }
+    return closestSprite;
+  }
+
+  heroMode() {
+    return sprites.filter(s => s.type === this.type).length <= numSpritesTriggerHereMode;
+  }
+
+  display() {
+    if (this.type === 0) {
+      image(rockImg, this.x, this.y, SPRITE_SIZE, SPRITE_SIZE);
+    } else if (this.type === 1) {
+      image(paperImg, this.x, this.y, SPRITE_SIZE, SPRITE_SIZE);
+    } else if (this.type === 2) {
+      image(scissorImg, this.x, this.y, SPRITE_SIZE, SPRITE_SIZE);
+    }
+  }
+
+  collides(other) {
+    let d = dist(this.x, this.y, other.x, other.y);
+    return d < SPRITE_SIZE;
+  }
+}
+
     </script>
 
 
